@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## 0.5.1 - 2026-11-16
+
+### Changed
+
+- adrlint moved to the [polylint](https://github.com/polylint) organization: the repository is now
+  `polylint/adrlint`, so the GitHub Action is `polylint/adrlint@v0` and the pre-commit repo is
+  `https://github.com/polylint/adrlint`.
+- The npm package is now `@polylint/adrlint`; the command is still `adrlint`. The unscoped `adrlint`
+  package is deprecated.
+- Homebrew moves to the `polylint/tap` tap (`brew install polylint/tap/adrlint`), with bottles for macOS
+  15+ on Apple Silicon and Linux x86_64/arm64, and Scoop to the `polylint` bucket.
+- Dependencies upgraded, including jiff 1.0, rumdl 0.3.4 and toml 1.2.
+
 ## 0.5.0 - 2026-11-03
 
 ### Added

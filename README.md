@@ -37,7 +37,7 @@ adrlint checks all four in one run, from one parse, with one exit code.
 
 ## Status
 
-adrlint is at **0.5.0**. The rule IDs and configuration keys are stable; nothing in this README is a
+adrlint is at **0.5.1**. The rule IDs and configuration keys are stable; nothing in this README is a
 placeholder name. The implemented surface is:
 
 - `adrlint lint` — `MADR01`–`MADR08` structural rules, `MADR11`/`MADR12`/`MADR21`/`MADR31` link,
@@ -140,7 +140,7 @@ Each release publishes eight archives and a checksum manifest:
 Checksums are in `adrlint_<version>_checksums.txt` (`sha256sum` format). Download, verify, install:
 
 ```bash
-VERSION=0.5.0
+VERSION=0.5.1
 TRIPLE=x86_64-unknown-linux-gnu
 BASE=https://github.com/polylint/adrlint/releases/download/v${VERSION}
 
@@ -222,7 +222,7 @@ jobs:
           args: "lint --format github"
 ```
 
-`@v0` is a floating tag that tracks the newest 0.x release; pin an exact tag (`@v0.5.0`) where
+`@v0` is a floating tag that tracks the newest 0.x release; pin an exact tag (`@v0.5.1`) where
 reproducibility matters. `--format github` emits workflow-command annotations with end positions, so
 findings appear inline on the diff; with plain `lint`, the action registers a problem matcher that
 turns the text output into annotations.
@@ -266,7 +266,7 @@ expanded by the shell first; adrlint expands them itself.
 ```yaml
 repos:
   - repo: https://github.com/polylint/adrlint
-    rev: v0.5.0
+    rev: v0.5.1
     hooks:
       - id: adrlint-lint
       - id: adrlint
@@ -298,7 +298,7 @@ as a source in your `poly.toml`:
 [[hooks.sources]]
 id = "adrlint"
 git = "https://github.com/polylint/adrlint.git"
-revision = "v0.5.0"
+revision = "v0.5.1"
 hooks = ["adrlint-lint", "adrlint-format-check", "adrlint-lock-check"]
 ```
 
