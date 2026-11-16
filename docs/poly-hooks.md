@@ -19,7 +19,7 @@ Add a Git source to `poly.toml`:
 [[hooks.sources]]
 id = "adrlint"
 git = "https://github.com/polylint/adrlint.git"
-revision = "v0.5.0"
+revision = "v0.5.1"
 hooks = ["adrlint-lint", "adrlint-format-check", "adrlint-lock-check"]
 ```
 
