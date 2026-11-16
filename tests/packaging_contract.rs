@@ -222,18 +222,13 @@ fn the_release_workflow_validates_the_tag_before_building() {
         );
     }
 
-    for line in text.lines() {
-        if line.contains("github.com/Goldziher/homebrew-tap") {
-            assert!(
-                !line.contains("x-access-token"),
-                "the tap clone must not embed the token in the clone URL: {line}"
-            );
-        }
-    }
+    // Taps are pushed with a short-lived org GitHub App token, never a long-lived PAT or a token
+    // embedded in a clone URL.
     assert!(
-        text.contains("GIT_CONFIG_KEY_0=http.extraheader"),
-        "the tap push must authenticate through an http.extraheader built from the environment"
+        !text.contains("HOMEBREW_TOKEN"),
+        "the retired HOMEBREW_TOKEN PAT must not come back"
     );
+    assert!(!text.contains("x-access-token"), "no clone URL may embed a credential");
 }
 
 #[test]
@@ -264,6 +259,8 @@ fn every_build_and_publish_job_requires_the_verify_job() {
         "publish_npm",
         "publish_pypi",
         "publish_homebrew",
+        "homebrew_bottles",
+        "publish_homebrew_bottles",
         "publish_scoop",
     ] {
         let block = job_block(&text, job);
@@ -562,186 +559,208 @@ fn the_release_asset_lists_name_every_published_archive() {
     );
 }
 
+const RELEASE_BASE: &str = "https://github.com/polylint/adrlint/releases/download";
+
 #[test]
 fn the_scoop_manifest_matches_the_published_assets() {
-    let script = read("scripts/update-scoop-manifest.sh");
+    let template = read("scripts/publish/adrlint.json.tmpl");
+    let config = read("scripts/publish/scoop.json");
 
-    assert!(script.starts_with("#!/usr/bin/env bash"));
+    // Each hash is bound to the release asset it describes.
+    for (key, archive) in [
+        ("win_x64_sha", "adrlint-x86_64-pc-windows-msvc.zip"),
+        ("win_arm64_sha", "adrlint-aarch64-pc-windows-msvc.zip"),
+    ] {
+        assert!(
+            config.contains(&format!(r#""{key}": "{archive}""#)),
+            "scripts/publish/scoop.json must bind {key} to {archive}"
+        );
+        assert!(
+            template.contains(&format!(r#""url": "{RELEASE_BASE}/${{tag}}/{archive}""#)),
+            "the Scoop manifest must point at {archive} on the tagged release"
+        );
+        assert!(
+            template.contains(&format!(r#""hash": "${{{key}}}""#)),
+            "the Scoop manifest must take the {archive} hash from {key}"
+        );
+        assert!(
+            template.contains(&format!("{RELEASE_BASE}/v$$version/{archive}")),
+            "autoupdate must keep Scoop's $version placeholder (escaped as $$version) for {archive}"
+        );
+    }
     assert!(
-        script.contains("set -euo pipefail"),
-        "the manifest generator must fail on any error"
-    );
-
-    assert!(
-        script.contains(r#"TRIPLE="x86_64-pc-windows-msvc""#),
-        "the Scoop manifest must ship the msvc archive"
-    );
-    assert!(
-        script.contains(r#"ARCHIVE="adrlint-${TRIPLE}.zip""#),
-        "the Scoop manifest must point at the release zip"
-    );
-    assert!(
-        script.contains(r#"BASE="https://github.com/Goldziher/adrlint/releases/download/v${VERSION}""#),
-        "the manifest URL must be the release download URL for the version"
-    );
-
-    // The pinned URL and hash describe the asset the release workflow uploads.
-    assert!(
-        script.contains(r#""url": "${BASE}/${ARCHIVE}""#),
-        "architecture.64bit.url must be the release archive"
-    );
-    assert!(
-        script.contains(r#""hash": "${HASH}""#),
-        "architecture.64bit.hash must come from the checksums file"
-    );
-    assert!(
-        script.contains("if (n == f) print $1"),
-        "the hash must be looked up by archive name in the checksums file"
+        config.contains(r#""name": "adrlint""#)
+            && config.contains(r#""template": "scripts/publish/adrlint.json.tmpl""#),
+        "scripts/publish/scoop.json must render bucket/adrlint.json from the template"
     );
 
     for field in [
+        r#""version": "${version}","#,
         r#""bin": "adrlint.exe","#,
         r#""license": "MIT","#,
-        r#""homepage": "https://github.com/Goldziher/adrlint","#,
+        r#""homepage": "https://github.com/polylint/adrlint","#,
+        r#""github": "https://github.com/polylint/adrlint""#,
+        r#""arm64": {"#,
     ] {
-        assert!(script.contains(field), "the manifest is missing {field}");
+        assert!(template.contains(field), "the Scoop manifest is missing {field}");
     }
-
     assert!(
-        script.contains(r#""github": "https://github.com/Goldziher/adrlint""#),
-        "checkver must follow the GitHub repository"
-    );
-    assert!(
-        script.contains(r#"releases/download/v\$version/${ARCHIVE}"#),
-        "autoupdate.architecture.64bit.url must substitute Scoop's $version placeholder"
-    );
-    assert!(
-        script.contains(r#"releases/download/v\$version/adrlint_\$version_checksums.txt"#),
+        template.contains(&format!("{RELEASE_BASE}/v$$version/adrlint_$$version_checksums.txt")),
         "autoupdate.hash.url must point at the release checksums file"
     );
 
-    // A missing entry is a release defect, not something to paper over with an empty hash.
-    let missing = line_number(&script, "missing checksum for ${ARCHIVE} in ${SUMS}");
-    let tail = &script[missing..];
-    let end = tail
-        .find("\nfi")
-        .unwrap_or_else(|| panic!("the missing-checksum branch is not closed by `fi`"));
+    // An unescaped `$version` would be substituted at render time and freeze autoupdate.
+    let unescaped = template.replace("$$", "").replace("${", "");
     assert!(
-        tail[..end].contains("exit 1"),
-        "a missing checksum must fail the script instead of emitting a partial manifest"
+        !unescaped.contains('$'),
+        "the Scoop template has an unescaped `$`; write Scoop placeholders as `$$version`"
     );
-    assert!(
-        script.contains(r#"[[ "$HASH" =~ ^[0-9a-f]{64}$ ]]"#),
-        "the manifest must refuse a malformed digest"
-    );
+}
 
-    // Deterministic: nothing may depend on the clock or on randomness.
-    for nondeterministic in ["$(date", "$RANDOM"] {
+#[test]
+fn the_homebrew_formula_matches_the_published_assets() {
+    let template = read("scripts/publish/adrlint.rb.tmpl");
+    let config = read("scripts/publish/homebrew.json");
+
+    for (key, archive) in [
+        ("macos_arm_sha", "adrlint-aarch64-apple-darwin.tar.gz"),
+        ("macos_intel_sha", "adrlint-x86_64-apple-darwin.tar.gz"),
+        ("linux_arm_sha", "adrlint-aarch64-unknown-linux-gnu.tar.gz"),
+        ("linux_intel_sha", "adrlint-x86_64-unknown-linux-gnu.tar.gz"),
+    ] {
         assert!(
-            !script.contains(nondeterministic),
-            "the manifest generator uses `{nondeterministic}`, so its output is not reproducible"
+            config.contains(&format!(r#""{key}": "{archive}""#)),
+            "scripts/publish/homebrew.json must bind {key} to {archive}"
         );
+        let url = format!(r#"url "{RELEASE_BASE}/v#{{version}}/{archive}""#);
+        let sha = format!(r#"sha256 "${{{key}}}""#);
+        let url_at = line_number(&template, &url);
+        assert!(
+            template[url_at..].lines().nth(1).is_some_and(|line| line.trim() == sha),
+            "the formula must pair {archive} with {key}"
+        );
+    }
+
+    for field in [
+        "class Adrlint < Formula",
+        r#"homepage "https://github.com/polylint/adrlint""#,
+        r#"version "${version}""#,
+        r#"license "MIT""#,
+        r#"bin.install "adrlint""#,
+    ] {
+        assert!(template.contains(field), "the formula is missing {field}");
     }
 }
 
-#[test]
-fn the_scoop_manifest_publishes_both_windows_architectures() {
-    let script = read("scripts/update-scoop-manifest.sh");
-
-    assert!(
-        script.contains(r#"ARM64_ARCHIVE="adrlint-${ARM64_TRIPLE}.zip""#)
-            && script.contains(r#""url": "${BASE}/${ARM64_ARCHIVE}""#)
-            && script.contains(r#""hash": "${ARM64_HASH}""#),
-        "the Scoop manifest must ship the Windows arm64 archive with its checksum"
-    );
-    assert!(
-        script.contains(r#""arm64": {"#),
-        "architecture.arm64 must describe the Windows arm64 archive"
-    );
-}
-
-#[test]
-fn the_scoop_job_publishes_only_from_a_finalized_release() {
+/// The steps shared by every job that pushes to a polylint tap or bucket.
+fn assert_pushes_with_the_org_app(job: &str, repository: &str, written: &str) {
     let text = read(".github/workflows/publish.yaml");
-    let block = job_block(&text, "publish_scoop");
-
-    let needs = block
-        .lines()
-        .find(|line| line.trim_start().starts_with("needs:"))
-        .expect("publish_scoop declares needs");
-    for dependency in ["meta", "verify", "finalize_release"] {
-        assert!(
-            needs.contains(dependency),
-            "publish_scoop must depend on `{dependency}`: {needs}"
-        );
-    }
+    let block = job_block(&text, job);
 
     assert!(
-        block.contains("!contains(needs.meta.outputs.version, '-rc')"),
-        "a prerelease must not update the Scoop bucket"
+        block.contains("actions/create-github-app-token@v3")
+            && block.contains("app-id: ${{ secrets.BOT_APP_ID }}")
+            && block.contains("private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}")
+            && block.contains("owner: polylint")
+            && block.contains(&format!("repositories: {repository}")),
+        "{job} must mint an org App token scoped to polylint/{repository}"
     );
     assert!(
-        block.contains("      contents: read"),
-        "publish_scoop only reads its own release and pushes with a PAT"
+        block.contains(&format!("repository: polylint/{repository}")),
+        "{job} must check out polylint/{repository}"
     );
     assert!(
-        !block.contains("contents: write"),
-        "publish_scoop must not ask for write access to this repository"
-    );
-
-    assert!(
-        block.contains(r#"gh release download "$tag" -p "adrlint_${version}_checksums.txt""#),
-        "publish_scoop must download the published checksums file"
+        block.contains(r#"git config user.name "polylint-release-helper[bot]""#)
+            && block.contains("+polylint-release-helper[bot]@users.noreply.github.com"),
+        "{job} must commit as the org release bot"
     );
     assert!(
-        block.contains(r#"./scripts/update-scoop-manifest.sh "$version" checksums.txt > adrlint.json"#),
-        "publish_scoop must generate the manifest with the script"
-    );
-    assert!(
-        block.contains("GIT_CONFIG_KEY_0=http.extraheader"),
-        "the bucket push must authenticate through an http.extraheader built from the environment"
-    );
-    assert!(
-        block.contains("GIT_CONFIG_VALUE_0="),
-        "the bucket push must pass the credential through GIT_CONFIG_VALUE_0"
-    );
-    assert!(
-        block.contains("bucket/adrlint.json"),
-        "publish_scoop must write bucket/adrlint.json"
+        block.contains(&format!("git add {written}")),
+        "{job} must write {written}"
     );
     assert!(
         block.contains("if git diff --cached --quiet; then"),
-        "publish_scoop must only commit when the manifest changed"
+        "{job} must only commit when the file changed"
     );
-
-    for line in block.lines() {
-        if line.contains("Goldziher/scoop-bucket") {
-            assert!(
-                !line.contains("x-access-token"),
-                "the bucket clone must not embed the token in the clone URL: {line}"
-            );
-        }
-    }
+    assert!(
+        !block.contains("git push --force") && !block.contains("git push -f"),
+        "{job} must never force-push a shared tap"
+    );
 }
 
 #[test]
-fn the_scoop_script_is_executable() {
-    let path = repo_root().join("scripts/update-scoop-manifest.sh");
-    assert!(path.is_file(), "scripts/update-scoop-manifest.sh is missing");
+fn the_tap_jobs_publish_only_from_a_finalized_release() {
+    let text = read(".github/workflows/publish.yaml");
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mode = fs::metadata(&path)
-            .unwrap_or_else(|error| panic!("could not stat {}: {error}", path.display()))
-            .permissions()
-            .mode();
-        assert_ne!(
-            mode & 0o111,
-            0,
-            "scripts/update-scoop-manifest.sh is not executable (mode {mode:o})"
+    for job in ["publish_homebrew", "publish_scoop"] {
+        let block = job_block(&text, job);
+        let needs = block
+            .lines()
+            .find(|line| line.trim_start().starts_with("needs:"))
+            .unwrap_or_else(|| panic!("{job} declares no needs"));
+        for dependency in ["meta", "verify", "finalize_release"] {
+            assert!(
+                needs.contains(dependency),
+                "{job} must depend on `{dependency}`: {needs}"
+            );
+        }
+        assert!(
+            block.contains("!contains(needs.meta.outputs.version, '-rc')"),
+            "a prerelease must not update the tap ({job})"
+        );
+        assert!(
+            block.contains("      contents: read") && !block.contains("contents: write"),
+            "{job} only reads this repository; the tap push uses the App token"
         );
     }
+
+    let homebrew = job_block(&text, "publish_homebrew");
+    assert!(
+        homebrew.contains("xberg-io/actions/publish-homebrew-source-formulas@v1")
+            && homebrew.contains("config-file: scripts/publish/homebrew.json"),
+        "publish_homebrew must render the formula from scripts/publish/homebrew.json"
+    );
+    assert_pushes_with_the_org_app("publish_homebrew", "homebrew-tap", "Formula/adrlint.rb");
+
+    let scoop = job_block(&text, "publish_scoop");
+    assert!(
+        scoop.contains("xberg-io/actions/publish-scoop-manifests@v1")
+            && scoop.contains("config-file: scripts/publish/scoop.json"),
+        "publish_scoop must render the manifest from scripts/publish/scoop.json"
+    );
+    assert_pushes_with_the_org_app("publish_scoop", "scoop-bucket", "bucket/adrlint.json");
+}
+
+#[test]
+fn bottles_are_built_after_the_formula_and_merged_into_the_tap() {
+    let text = read(".github/workflows/publish.yaml");
+
+    let bottles = job_block(&text, "homebrew_bottles");
+    assert!(
+        bottles.contains("needs: [meta, verify, publish_homebrew]"),
+        "bottles need the rendered formula in the tap"
+    );
+    for (os, tag) in [
+        ("macos-26", "arm64_tahoe"),
+        ("ubuntu-latest", "x86_64_linux"),
+        ("ubuntu-24.04-arm", "arm64_linux"),
+    ] {
+        assert!(
+            bottles.contains(&format!("os: {os}, bottle_tag: {tag}")),
+            "homebrew_bottles must build the {tag} bottle on {os}"
+        );
+    }
+    assert!(
+        bottles.contains("xberg-io/actions/homebrew-build-bottles@v1") && bottles.contains("tap: polylint/tap"),
+        "homebrew_bottles must build from polylint/tap"
+    );
+
+    let merge = job_block(&text, "publish_homebrew_bottles");
+    assert!(
+        merge.contains("xberg-io/actions/homebrew-merge-bottles@v1"),
+        "publish_homebrew_bottles must merge the bottle DSL"
+    );
+    assert_pushes_with_the_org_app("publish_homebrew_bottles", "homebrew-tap", "Formula/adrlint.rb");
 }
 
 /// Guard: the helpers above must actually find the constructs they assert about.

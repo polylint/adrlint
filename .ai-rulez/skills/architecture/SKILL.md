@@ -13,7 +13,8 @@ x-ai-rulez:
 
 adrlint is a Rust CLI linter and formatter for Architecture Decision Records written in Markdown
 following the [MADR](https://github.com/adr/madr) specification. It is distributed through crates.io,
-npm, PyPI, Homebrew and Scoop, using the same binary-wrapper pattern as the other Goldziher Rust CLIs.
+npm, PyPI, Homebrew and Scoop, using the same binary-wrapper pattern as the other
+[polylint](https://github.com/polylint) Rust CLIs.
 
 The tool is opinionated in four ways:
 
@@ -50,8 +51,9 @@ One module per concern; every module in the layout is implemented.
 - `npm-package/` and `pip-package/` — wrappers that download the release binary for the platform
   (the pip one caches it under `adrlint/downloader.py`).
 - `.github/workflows/publish.yaml` — native per-platform release build matrix.
-- `scripts/update-homebrew-formula.sh` and `scripts/update-scoop-manifest.sh` — regenerate the tap
-  formula and the Scoop manifest from the release checksums.
+- `scripts/publish/` — the Homebrew formula and Scoop manifest templates plus their asset configs,
+  rendered at release time by the shared `xberg-io/actions` publishers into `polylint/homebrew-tap`
+  and `polylint/scoop-bucket`.
 - Root `action.yml` — composite GitHub Action that installs and runs `adrlint lint`; the install
   logic lives in `scripts/gh-action-*.sh` and annotations come from `problem-matcher.json`.
 

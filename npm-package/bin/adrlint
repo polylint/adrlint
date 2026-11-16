@@ -20,7 +20,7 @@ if (!fs.existsSync(executable)) {
       "adrlint: the native binary is missing.",
       "",
       "It is downloaded by this package's postinstall step. Reinstall to retry:",
-      "  pnpm add -g adrlint",
+      "  npm i -g @polylint/adrlint",
       "",
       "If the install ran with --ignore-scripts, the binary was never fetched.",
     ].join("\n"),

@@ -1,0 +1,12 @@
+{
+  "manifests": [
+    {
+      "name": "adrlint",
+      "template": "scripts/publish/adrlint.json.tmpl",
+      "assets": {
+        "win_x64_sha": "adrlint-x86_64-pc-windows-msvc.zip",
+        "win_arm64_sha": "adrlint-aarch64-pc-windows-msvc.zip"
+      }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+# typed: false
+# frozen_string_literal: true
+
+# Rendered by xberg-io/actions/publish-homebrew-source-formulas from scripts/publish/adrlint.rb.tmpl
+# in polylint/adrlint; the bottle block is merged in afterwards. Do not edit by hand.
+class Adrlint < Formula
+  desc "Lint and format MADR architecture decision records"
+  homepage "https://github.com/polylint/adrlint"
+  version "${version}"
+  license "MIT"
+
+  on_macos do
+    on_arm do
+      url "https://github.com/polylint/adrlint/releases/download/v#{version}/adrlint-aarch64-apple-darwin.tar.gz"
+      sha256 "${macos_arm_sha}"
+    end
+
+    on_intel do
+      url "https://github.com/polylint/adrlint/releases/download/v#{version}/adrlint-x86_64-apple-darwin.tar.gz"
+      sha256 "${macos_intel_sha}"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "https://github.com/polylint/adrlint/releases/download/v#{version}/adrlint-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "${linux_arm_sha}"
+    end
+
+    on_intel do
+      url "https://github.com/polylint/adrlint/releases/download/v#{version}/adrlint-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "${linux_intel_sha}"
+    end
+  end
+
+  def install
+    bin.install "adrlint"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/adrlint --version")
+  end
+end

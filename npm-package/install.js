@@ -8,7 +8,7 @@ const AdmZip = require("adm-zip");
 
 const { version } = require("./package.json");
 
-const BASE_URL = `https://github.com/Goldziher/adrlint/releases/download/v${version}`;
+const BASE_URL = `https://github.com/polylint/adrlint/releases/download/v${version}`;
 
 // A release archive is a few megabytes. Refusing anything larger keeps a hostile or broken
 // response from being buffered into memory.

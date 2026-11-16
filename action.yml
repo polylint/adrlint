@@ -1,7 +1,7 @@
 name: adrlint
 description: >-
   Lint MADR architecture decision records: structure, numbering, Markdown quality and immutability.
-author: Goldziher
+author: polylint
 branding:
   icon: check-square
   color: orange
@@ -37,7 +37,7 @@ inputs:
   repository:
     description: "Advanced: override the owner/repo release assets are downloaded from."
     required: false
-    default: "Goldziher/adrlint"
+    default: "polylint/adrlint"
 
 outputs:
   version:

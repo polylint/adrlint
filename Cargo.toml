@@ -10,8 +10,8 @@ categories = ["command-line-utilities", "development-tools"]
 keywords = ["adr", "architecture", "madr", "linter", "markdown"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/Goldziher/adrlint"
-homepage = "https://github.com/Goldziher/adrlint"
+repository = "https://github.com/polylint/adrlint"
+homepage = "https://github.com/polylint/adrlint"
 
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/adrlint-{ target }{ archive-suffix }"
@@ -55,7 +55,7 @@ ureq = { version = "3.5.1", default-features = false, features = ["rustls"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-serde_json = "1.0.154"
 # Applies the GitHub problem matcher's pattern to real `lint` output.
 regex = "1.13.1"
+serde_json = "1.0.154"
 tempfile = "3.27.0"
