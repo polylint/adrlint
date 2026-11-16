@@ -359,7 +359,10 @@ fn platform_maps() -> Vec<(String, String)> {
     let mut files = action_yaml_files();
     for relative in [
         "npm-package/install.js",
+        "npm-package/index.js",
+        "npm-package/stage-binaries.sh",
         "pip-package/adrlint/downloader.py",
+        "pip-package/build_wheels.py",
         "scripts/gh-action-resolve.sh",
         "scripts/gh-action-install.sh",
         "scripts/gh-action-run.sh",
@@ -761,6 +764,222 @@ fn bottles_are_built_after_the_formula_and_merged_into_the_tap() {
         "publish_homebrew_bottles must merge the bottle DSL"
     );
     assert_pushes_with_the_org_app("publish_homebrew_bottles", "homebrew-tap", "Formula/adrlint.rb");
+}
+
+/// The npm platform packages: directory, npm `os`, `cpu`, `libc` (Linux only) and release triple.
+const NPM_PLATFORMS: &[(&str, &str, &str, Option<&str>, &str)] = &[
+    ("darwin-arm64", "darwin", "arm64", None, "aarch64-apple-darwin"),
+    ("darwin-x64", "darwin", "x64", None, "x86_64-apple-darwin"),
+    (
+        "linux-arm64-gnu",
+        "linux",
+        "arm64",
+        Some("glibc"),
+        "aarch64-unknown-linux-gnu",
+    ),
+    (
+        "linux-arm64-musl",
+        "linux",
+        "arm64",
+        Some("musl"),
+        "aarch64-unknown-linux-musl",
+    ),
+    (
+        "linux-x64-gnu",
+        "linux",
+        "x64",
+        Some("glibc"),
+        "x86_64-unknown-linux-gnu",
+    ),
+    (
+        "linux-x64-musl",
+        "linux",
+        "x64",
+        Some("musl"),
+        "x86_64-unknown-linux-musl",
+    ),
+    ("win32-arm64", "win32", "arm64", None, "aarch64-pc-windows-msvc"),
+    ("win32-x64", "win32", "x64", None, "x86_64-pc-windows-msvc"),
+];
+
+fn json(relative: &str) -> serde_json::Value {
+    serde_json::from_str(&read(relative)).unwrap_or_else(|error| panic!("{relative} is not JSON: {error}"))
+}
+
+fn crate_version() -> String {
+    read("Cargo.toml")
+        .lines()
+        .find_map(|line| line.strip_prefix("version = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("Cargo.toml declares a package version")
+        .to_owned()
+}
+
+#[test]
+fn every_npm_platform_package_is_pinned_by_the_umbrella_at_the_crate_version() {
+    let version = crate_version();
+    let umbrella = json("npm-package/package.json");
+    let pins = umbrella["optionalDependencies"]
+        .as_object()
+        .expect("the umbrella declares optionalDependencies");
+    assert_eq!(pins.len(), NPM_PLATFORMS.len(), "one pin per platform package");
+
+    let on_disk = fs::read_dir(repo_root().join("npm-package/platforms"))
+        .expect("npm-package/platforms exists")
+        .count();
+    assert_eq!(on_disk, NPM_PLATFORMS.len(), "one directory per platform package");
+
+    let index = read("npm-package/index.js");
+    let staging = read("npm-package/stage-binaries.sh");
+    for &(dir, os, cpu, libc, triple) in NPM_PLATFORMS {
+        let name = format!("@polylint/adrlint-{dir}");
+        let manifest = json(&format!("npm-package/platforms/{dir}/package.json"));
+
+        assert_eq!(manifest["name"], name.as_str());
+        assert_eq!(
+            manifest["version"],
+            version.as_str(),
+            "{name} must carry the crate version"
+        );
+        assert_eq!(pins[&name], version.as_str(), "the umbrella must pin {name} exactly");
+        assert_eq!(manifest["os"], serde_json::json!([os]), "{name} os");
+        assert_eq!(manifest["cpu"], serde_json::json!([cpu]), "{name} cpu");
+        match libc {
+            Some(libc) => assert_eq!(manifest["libc"], serde_json::json!([libc]), "{name} libc"),
+            None => assert!(manifest.get("libc").is_none(), "{name} must not restrict libc"),
+        }
+        assert!(
+            manifest["files"]
+                .as_array()
+                .is_some_and(|files| files.contains(&"bin/".into())),
+            "{name} must publish its staged bin/ directory"
+        );
+        assert!(manifest.get("scripts").is_none(), "{name} must run no install script");
+
+        let libc_js = libc.map_or_else(|| "null".to_owned(), |libc| format!("\"{libc}\""));
+        assert!(
+            index.contains(&format!(
+                r#"{{ pkg: "{name}", platform: "{os}", arch: "{cpu}", libc: {libc_js} }}"#
+            )),
+            "index.js must resolve {name} on {os}/{cpu}"
+        );
+        assert!(
+            staging.contains(&format!(r#""{dir}:{triple}""#)),
+            "stage-binaries.sh must fill {name} from the {triple} archive"
+        );
+    }
+}
+
+#[test]
+fn the_npm_launcher_prefers_the_platform_package_over_the_download() {
+    let index = read("npm-package/index.js");
+    assert!(
+        index.contains("return resolvePlatformBinary() ?? resolveDownloadedBinary();"),
+        "the platform package binary must win over the fallback download"
+    );
+
+    let launcher = read("npm-package/bin/adrlint");
+    assert!(launcher.contains("resolveBinaryPath()") && launcher.contains("missingBinaryMessage()"));
+
+    let install = read("npm-package/install.js");
+    let platform_check = line_number(&install, "const platformBinary = resolvePlatformBinary();");
+    assert!(
+        platform_check < line_number(&install, "await installBinary();"),
+        "install.js must skip the download when a platform package resolved"
+    );
+    assert!(
+        !install.contains("process.exit(1)"),
+        "a failed fallback download must not fail `npm install`"
+    );
+    // The archive readers load only on the download path.
+    assert!(!install.lines().any(|line| line.starts_with("const tar = require(")));
+    assert!(!install.lines().any(|line| line.starts_with("const AdmZip = require(")));
+
+    let umbrella = json("npm-package/package.json");
+    let files = umbrella["files"].as_array().expect("the umbrella lists its files");
+    for file in ["index.js", "install.js", "bin/adrlint"] {
+        assert!(files.contains(&file.into()), "the umbrella must publish {file}");
+    }
+}
+
+#[test]
+fn the_npm_job_publishes_the_platform_packages_before_the_umbrella() {
+    let text = read(".github/workflows/publish.yaml");
+    let block = job_block(&text, "publish_npm");
+
+    let download = line_number(block, "gh release download");
+    let stage = line_number(block, "./npm-package/stage-binaries.sh --artifacts artifacts");
+    let platforms = line_number(block, "publish_one \"${dir%/}\"");
+    let umbrella = line_number(block, "publish_one npm-package");
+    assert!(download < stage && stage < platforms && platforms < umbrella);
+    assert!(block.contains("npm publish --provenance --access public"));
+    assert!(block.contains("id-token: write"));
+    assert!(
+        !block.contains("environment:"),
+        "the npm trusted publisher names no environment"
+    );
+
+    let staging = read("npm-package/stage-binaries.sh");
+    assert!(
+        line_number(&staging, "checksum mismatch for $archive") < line_number(&staging, "tar -xzf"),
+        "stage-binaries.sh must verify each archive before unpacking it"
+    );
+}
+
+#[test]
+fn the_pypi_job_builds_every_platform_wheel_and_the_fallback() {
+    let text = read(".github/workflows/publish.yaml");
+    let block = job_block(&text, "publish_pypi");
+    assert!(block.contains("environment: pypi"));
+    assert!(block.contains("python pip-package/build_wheels.py --artifacts artifacts --out pip-package/dist"));
+    assert!(
+        block.contains(r#"if [ "$count" -ne 9 ]; then"#),
+        "8 platform wheels plus the fallback"
+    );
+    assert!(
+        !block.contains("python -m build\n"),
+        "no sdist: the wheels come from build_wheels.py"
+    );
+
+    let builder = read("pip-package/build_wheels.py");
+    for &(_, _, _, _, triple) in NPM_PLATFORMS {
+        assert!(
+            builder.contains(&format!(r#"Target("{triple}")"#)),
+            "build_wheels.py must build a wheel for {triple}"
+        );
+    }
+    for tag in [
+        r#"return f"macosx_{MACOS_ARM64_MIN}_arm64""#,
+        r#"return f"macosx_{MACOS_X86_64_MIN}_x86_64""#,
+        r#"return "win_arm64""#,
+        r#"return "win_amd64""#,
+        r#"return f"musllinux_{MUSLLINUX_VERSION}_{machine}""#,
+        r#"return f"manylinux_2_{required_glibc_minor(binary)}_{machine}""#,
+    ] {
+        assert!(builder.contains(tag), "build_wheels.py must map a target onto {tag}");
+    }
+    assert!(
+        line_number(&builder, "checksum mismatch for") < line_number(&builder, "binary = extract_binary("),
+        "build_wheels.py must verify each archive before unpacking it"
+    );
+
+    let pyproject = read("pip-package/pyproject.toml");
+    assert!(
+        pyproject.contains("dependencies = []"),
+        "platform wheels need no dependency"
+    );
+    assert!(pyproject.contains("[tool.hatch.build.targets.sdist]\nexclude = [\"*\"]"));
+    let hook = read("pip-package/hatch_build.py");
+    assert!(
+        hook.contains(r#"FALLBACK_DEPENDENCIES = ["certifi"#),
+        "only the fallback wheel downloads, so only it depends on certifi"
+    );
+
+    let cli = read("pip-package/adrlint/cli.py");
+    assert!(
+        line_number(&cli, "bundled = bundled_binary()") < line_number(&cli, "from .downloader import ensure_binary"),
+        "the bundled binary must win over the fallback download"
+    );
 }
 
 /// Guard: the helpers above must actually find the constructs they assert about.

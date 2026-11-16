@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=84.2.1", "wheel>=0.48.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
 
 [project]
 name = "adrlint"
@@ -26,9 +26,9 @@ classifiers = [
 ]
 keywords = ["adr", "architecture-decision-record", "madr", "linter", "markdown", "cli", "rust"]
 requires-python = ">=3.11"
-dependencies = [
-    "certifi>=2026.10.23"
-]
+# Platform wheels carry the binary and need nothing. The py3-none-any fallback wheel downloads the
+# release binary at first run and adds certifi for that (see hatch_build.py).
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/polylint/adrlint"
@@ -38,5 +38,12 @@ Issues = "https://github.com/polylint/adrlint/issues"
 [project.scripts]
 adrlint = "adrlint.cli:main"
 
-[tool.setuptools]
+[tool.hatch.build.targets.wheel]
 packages = ["adrlint"]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
+
+# No sdist: the distribution's payload is a prebuilt binary a source build cannot reproduce.
+[tool.hatch.build.targets.sdist]
+exclude = ["*"]

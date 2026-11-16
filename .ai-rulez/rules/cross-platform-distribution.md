@@ -16,11 +16,15 @@ same channels as its sibling Rust CLIs; all of them must stay consistent and fun
 ### Channels
 
 - **crates.io** (`adrlint`): `cargo publish`. Source of truth for the Rust binary.
-- **npm** (`@polylint/adrlint`, bin `adrlint`; the unscoped `adrlint` is deprecated): wrapper in
-  `npm-package/`; `install.js` downloads and verifies the release
-  archive matching the platform triple.
-- **PyPI** (`adrlint`): wrapper in `pip-package/`; `adrlint/downloader.py` performs the same
-  download-and-cache strategy.
+- **npm** (`@polylint/adrlint`, bin `adrlint`; the unscoped `adrlint` is deprecated): umbrella in
+  `npm-package/` with exact-version `optionalDependencies` on eight platform packages
+  `@polylint/adrlint-<platform>` (`npm-package/platforms/<platform>/`: `darwin-arm64`, `darwin-x64`,
+  `linux-x64-gnu`, `linux-x64-musl`, `linux-arm64-gnu`, `linux-arm64-musl`, `win32-x64`,
+  `win32-arm64`), selected by `os`/`cpu`/`libc`. Each ships one binary in `bin/`, staged from the
+  release archives by `npm-package/stage-binaries.sh`.
+- **PyPI** (`adrlint`): `pip-package/build_wheels.py` builds one wheel per target with the binary
+  embedded (`manylinux_2_<glibc>`, `musllinux_1_2`, `macosx_11_0_arm64`, `macosx_10_12_x86_64`,
+  `win_amd64`, `win_arm64`) plus a `py3-none-any` fallback wheel with no binary. No sdist.
 - **Homebrew**: `Formula/adrlint.rb` in `polylint/homebrew-tap` (`brew install polylint/tap/adrlint`),
   rendered from `scripts/publish/adrlint.rb.tmpl` by `xberg-io/actions/publish-homebrew-source-formulas`
   (config `scripts/publish/homebrew.json`); bottles for `arm64_tahoe`, `x86_64_linux` and
@@ -41,7 +45,8 @@ same channels as its sibling Rust CLIs; all of them must stay consistent and fun
 2. Commit and tag `vX.Y.Z`.
 3. Push the tag; the workflow creates a draft release, builds every target, uploads the archives and
    `adrlint_<version>_checksums.txt`, then promotes the draft.
-4. npm, PyPI, Homebrew and Scoop publish from the finalized release assets.
+4. npm, PyPI, Homebrew and Scoop publish from the finalized release assets. npm publishes every
+   platform package before the umbrella, so the umbrella never pins a version that does not exist.
 5. A stable release moves the floating major tag (`v0`) to the new commit.
 
 ### Targets
@@ -57,8 +62,19 @@ whose container carries the musl toolchain jemalloc needs.
 
 ### Guidelines
 
+- Binary resolution order is the platform package first, the download second. The npm launcher runs
+  the binary from the matching `@polylint/adrlint-<platform>`; only when none is installed does
+  `npm-package/install.js` download the archive, and a failed download never fails `npm install`. A
+  platform wheel runs its bundled `adrlint/bin/adrlint`; only the `py3-none-any` fallback wheel,
+  which alone depends on certifi, calls `adrlint/downloader.py`. The platform path needs no network.
+- Platform packages and wheels are staged from the published archives after verifying them against
+  `adrlint_<version>_checksums.txt`; never from a separate build.
+- A new npm platform package must be published once by hand before trusted publishing can be
+  configured for it: `scripts/npm-stage-from-release.sh <version> <outdir>` packs the tarballs from
+  an existing release without publishing.
 - Test `npm-package/install.js` and `pip-package/adrlint/downloader.py` whenever either changes; both
-  verify SHA-256 against the release checksums before extracting.
+  verify SHA-256 against the release checksums before extracting. `tests/wrapper_resolution.rs`
+  covers the resolution order and `tests/packaging_contract.rs` the platform inventory.
 - Do not add a runtime download for a grammar, a formatter or a rule pack. rumdl is linked in, and the
   binary is self-contained.
 - Release candidates use `vX.Y.Z-rc.N` tags; PyPI uses `X.Y.ZrcN`.

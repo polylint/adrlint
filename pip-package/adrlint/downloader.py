@@ -1,4 +1,8 @@
-"""Locate the adrlint executable, downloading and verifying a release asset when needed.
+"""Fallback: download and verify the release binary when no platform wheel matched this host.
+
+Platform wheels embed the binary and never import this module. pip installs the ``py3-none-any``
+fallback wheel only on a host no platform wheel covers, and :mod:`adrlint.cli` then calls
+:func:`ensure_binary`, which fetches the matching release archive on first run.
 
 Environment
 -----------
@@ -20,7 +24,6 @@ import os
 import platform
 import shutil
 import ssl
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -28,8 +31,6 @@ import zipfile
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import Request, urlopen
-
-import certifi
 
 BASE_URL = "https://github.com/polylint/adrlint/releases/download"
 
@@ -92,7 +93,14 @@ def _asset(version: str) -> tuple[str, str, str]:
 
 def _get(url: str) -> bytes:
     request = Request(url, headers={"User-Agent": "adrlint-python-wrapper"})
-    context = ssl.create_default_context(cafile=certifi.where())
+    try:
+        # The fallback wheel depends on certifi; a platform wheel reaching here (a removed binary)
+        # falls back to the system trust store rather than failing on the import.
+        import certifi
+
+        context = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        context = ssl.create_default_context()
     try:
         with urlopen(request, timeout=30, context=context) as response:
             if response.status != 200:
@@ -252,15 +260,3 @@ def ensure_binary() -> str:
     print("Binary downloaded successfully!", file=sys.stderr)
     return str(binary_path)
 
-
-def run_adrlint(args: list[str]) -> None:
-    """Run the adrlint binary with the given arguments."""
-    binary_path = ensure_binary()
-
-    try:
-        result = subprocess.run([binary_path] + args, check=False)
-        sys.exit(result.returncode)
-    except FileNotFoundError:
-        raise RuntimeError(f"Binary not found at {binary_path}")
-    except Exception as exc:
-        raise RuntimeError(f"Failed to run adrlint: {exc}")

@@ -19,14 +19,18 @@ All version numbers are updated together when releasing.
 3. `pip-package/pyproject.toml` — `version` under `[project]`
 4. `pip-package/adrlint/__init__.py` — `__version__`
 
+The npm platform packages follow the same version: each `npm-package/platforms/*/package.json`
+`version`, and the umbrella's exact pin on each under `optionalDependencies`.
+
 ### Rules
 
-- All four carry the same version when preparing a release.
+- All four, and the npm platform package versions and pins, carry the same version when preparing a
+  release.
 - Semantic versioning, `MAJOR.MINOR.PATCH`. The crate is pre-1.0: rule additions and CLI changes are
   minor, fixes are patch, and a breaking rename of a rule ID or a flag is minor until 1.0.
 - Update all four in a single commit (`chore(release): vX.Y.Z`).
 - The git tag is `vX.Y.Z`; PyPI uses `X.Y.ZrcN` for release candidates.
-- Never tag before the four files agree; `.github/workflows/publish.yaml` verifies them and fails the
-  release otherwise.
+- Never tag before the four files and the platform packages agree; `.github/workflows/publish.yaml`
+  verifies them and fails the release otherwise.
 - The lock file's `canonical` field is versioned separately from the crate. Changing the serializer
   bumps it; the crate version does not substitute for it.

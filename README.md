@@ -101,8 +101,14 @@ Run without installing:
 npx @polylint/adrlint lint     # or: pnpm dlx @polylint/adrlint lint, bunx @polylint/adrlint lint
 ```
 
-The package downloads the release archive for your platform on `postinstall`, verifies its SHA-256
-against the release checksums before extracting, and pins its own version. Requires Node.js 22+.
+The binary ships in a per-platform package, `@polylint/adrlint-<platform>` (`darwin-arm64`,
+`darwin-x64`, `linux-x64-gnu`, `linux-x64-musl`, `linux-arm64-gnu`, `linux-arm64-musl`, `win32-x64`,
+`win32-arm64`), which the package manager selects through `optionalDependencies` by `os`, `cpu` and
+`libc`. That path needs no network access during install, so it works in sandboxes and offline
+mirrors. Only when no platform package is installed (optional dependencies disabled, or an
+unsupported host) does `postinstall` fall back to downloading the release archive and verifying its
+SHA-256 against the release checksums; a failed fallback does not fail the install. Every package
+pins the same version. Requires Node.js 22+.
 
 The package is published as `@polylint/adrlint`; the command it installs is still `adrlint`. Releases
 up to 0.5.0 were published under the unscoped name `adrlint`, which is deprecated.
@@ -119,8 +125,10 @@ Run without installing:
 uvx adrlint lint               # or: pipx run adrlint lint
 ```
 
-The wheel downloads and caches the matching release binary with the same checksum verification.
-Requires Python 3.11+.
+Each platform has its own wheel with the binary inside (`manylinux` for glibc Linux, `musllinux` for
+musl, `macosx`, `win_amd64`/`win_arm64`), so `pip` installs it without fetching anything else. A
+pure-Python `py3-none-any` fallback wheel covers any other host: it downloads and caches the matching
+release binary on first run, with the same checksum verification. Requires Python 3.11+.
 
 ### Prebuilt archives
 
