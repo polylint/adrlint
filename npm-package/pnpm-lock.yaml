@@ -172,12 +172,81 @@ importers:
       tar:
         specifier: ^7.5.23
         version: 7.5.23
+    optionalDependencies:
+      '@polylint/adrlint-darwin-arm64':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-darwin-x64':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-linux-arm64-gnu':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-linux-arm64-musl':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-linux-x64-gnu':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-linux-x64-musl':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-win32-arm64':
+        specifier: 0.5.1
+        version: 0.5.1
+      '@polylint/adrlint-win32-x64':
+        specifier: 0.5.1
+        version: 0.5.1
 
 packages:
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
+
+  '@polylint/adrlint-darwin-arm64@0.5.1':
+    resolution: {integrity: sha512-sOqyUsfj28+6VwHgzlK8u555cdkiyoEEl83+1yWO31N4kJN64BIIK4kLokNHbDyTzibyVwk6Kq+60FUztXWWcw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@polylint/adrlint-darwin-x64@0.5.1':
+    resolution: {integrity: sha512-ZfU+p8Z5nevi1pIAOJyA/zItB6JEiLzlz3P/qEbaX0lLSigO4itWNFlP6A7N/j+pc+6xPAeBqoWwKY+r62NjQg==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@polylint/adrlint-linux-arm64-gnu@0.5.1':
+    resolution: {integrity: sha512-9zDtlBgv5kQ8eTfI1H/4EO9MtngtLoP4mFnEbPxyyM8Qf41GPIHEUGMzFZpi6BGwAL1RATlgBNEzC2tHjQ6mig==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [glibc]
+
+  '@polylint/adrlint-linux-arm64-musl@0.5.1':
+    resolution: {integrity: sha512-Omj28sJDobgET4gHljVJUX5FzWZMkmBOCe13VSru444XQZRl6D2AI+yt8clt6WKkxeBmSoiE52KhApcfkffoYA==}
+    cpu: [arm64]
+    os: [linux]
+    libc: [musl]
+
+  '@polylint/adrlint-linux-x64-gnu@0.5.1':
+    resolution: {integrity: sha512-brYdUphi3sAfVDLU1om/CufGuOmCIrgGbP624ukuxcyoviNMst4UiP0fuk1F4bJbTY/si9Da46z3nKBm7/qDbw==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@polylint/adrlint-linux-x64-musl@0.5.1':
+    resolution: {integrity: sha512-f/SRyDBvub9ejw5tlN8sNZpTEfyca3jNUVhhSQt/lz5lNG3J3EL0CuFycGYTSXynLA7tdYqL2cBoI07OFhOfgQ==}
+    cpu: [x64]
+    os: [linux]
+    libc: [musl]
+
+  '@polylint/adrlint-win32-arm64@0.5.1':
+    resolution: {integrity: sha512-JSBA8Qbsl7ZzAEbW6atQFusxDxavqG871AxNzFaDgFl8gKao1AWEyND3UE6IKPeJirap2T3orB/LWcjbGLjJHA==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@polylint/adrlint-win32-x64@0.5.1':
+    resolution: {integrity: sha512-iyuDJuqFeLU8D8C3NyDHxawat+kK/kh4VsaUhfxbbAi9Px5rO4l8zqHlqO3SA0+IH5WQ8LQQLOGMYsscd8eFHQ==}
+    cpu: [x64]
+    os: [win32]
 
   adm-zip@0.6.1:
     resolution: {integrity: sha512-Xwrja8nx9e5o2N1my4DsKCeKpdrnACyr1wtbPxBDgGzKzKyE9kRtBFA8mWldI+RVlD7CBZNWY/wQ2+ydwOR6kQ==}
@@ -208,6 +277,30 @@ snapshots:
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.3
+
+  '@polylint/adrlint-darwin-arm64@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-darwin-x64@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-linux-arm64-gnu@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-linux-arm64-musl@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-linux-x64-gnu@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-linux-x64-musl@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-win32-arm64@0.5.1':
+    optional: true
+
+  '@polylint/adrlint-win32-x64@0.5.1':
+    optional: true
 
   adm-zip@0.6.1: {}
 
