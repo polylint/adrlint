@@ -12,7 +12,10 @@ fn repo_root() -> PathBuf {
 
 fn read(relative: &str) -> String {
     let path = repo_root().join(relative);
-    fs::read_to_string(&path).unwrap_or_else(|error| panic!("could not read {}: {error}", path.display()))
+    // ~keep A Windows checkout may use CRLF; the assertions match LF text.
+    fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("could not read {}: {error}", path.display()))
+        .replace("\r\n", "\n")
 }
 
 /// Every workflow plus the composite action at the repository root: all of them run `uses:` steps.
@@ -30,7 +33,9 @@ fn action_yaml_files() -> Vec<(String, String)> {
         .map(|path| {
             (
                 path.display().to_string(),
-                fs::read_to_string(path).expect("reading a workflow"),
+                fs::read_to_string(path)
+                    .expect("reading a workflow")
+                    .replace("\r\n", "\n"),
             )
         })
         .collect();
