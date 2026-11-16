@@ -1,6 +1,6 @@
 {
   "name": "@polylint/adrlint-darwin-x64",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "The macOS (Intel) adrlint binary for @polylint/adrlint. Not useful on its own.",
   "homepage": "https://github.com/polylint/adrlint#readme",
   "bugs": {

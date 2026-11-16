@@ -4,8 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## 0.5.2 - 2026-11-16
+
 ### Changed
 
+- Builds on `polylint-rumdl`, polylint's fork of rumdl on Oxc 0.158 whose CLI allocators are optional
+  (rvben/rumdl#1003, #1004). A host that embeds adrlint next to a current Oxc and jemalloc 0.7 now
+  resolves one copy of each.
 - npm: the binary now ships in eight per-platform packages, `@polylint/adrlint-<platform>`
   (`darwin-arm64`, `darwin-x64`, `linux-x64-gnu`, `linux-x64-musl`, `linux-arm64-gnu`,
   `linux-arm64-musl`, `win32-x64`, `win32-arm64`), which `@polylint/adrlint` pulls in through

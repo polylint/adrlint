@@ -1,6 +1,6 @@
 {
   "name": "@polylint/adrlint",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A fast, opinionated linter and formatter for MADR architecture decision records",
   "bin": {
     "adrlint": "bin/adrlint"
@@ -33,14 +33,14 @@
     "tar": "^7.5.23"
   },
   "optionalDependencies": {
-    "@polylint/adrlint-darwin-arm64": "0.5.1",
-    "@polylint/adrlint-darwin-x64": "0.5.1",
-    "@polylint/adrlint-linux-arm64-gnu": "0.5.1",
-    "@polylint/adrlint-linux-arm64-musl": "0.5.1",
-    "@polylint/adrlint-linux-x64-gnu": "0.5.1",
-    "@polylint/adrlint-linux-x64-musl": "0.5.1",
-    "@polylint/adrlint-win32-arm64": "0.5.1",
-    "@polylint/adrlint-win32-x64": "0.5.1"
+    "@polylint/adrlint-darwin-arm64": "0.5.2",
+    "@polylint/adrlint-darwin-x64": "0.5.2",
+    "@polylint/adrlint-linux-arm64-gnu": "0.5.2",
+    "@polylint/adrlint-linux-arm64-musl": "0.5.2",
+    "@polylint/adrlint-linux-x64-gnu": "0.5.2",
+    "@polylint/adrlint-linux-x64-musl": "0.5.2",
+    "@polylint/adrlint-win32-arm64": "0.5.2",
+    "@polylint/adrlint-win32-x64": "0.5.2"
   },
   "main": "index.js",
   "files": [

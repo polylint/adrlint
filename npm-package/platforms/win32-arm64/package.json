@@ -1,6 +1,6 @@
 {
   "name": "@polylint/adrlint-win32-arm64",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "The Windows arm64 adrlint binary for @polylint/adrlint. Not useful on its own.",
   "homepage": "https://github.com/polylint/adrlint#readme",
   "bugs": {

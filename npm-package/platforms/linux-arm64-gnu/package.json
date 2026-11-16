@@ -1,6 +1,6 @@
 {
   "name": "@polylint/adrlint-linux-arm64-gnu",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "The Linux arm64 (glibc) adrlint binary for @polylint/adrlint. Not useful on its own.",
   "homepage": "https://github.com/polylint/adrlint#readme",
   "bugs": {
