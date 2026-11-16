@@ -15,12 +15,15 @@ npm i -g @polylint/adrlint      # or run once: npx @polylint/adrlint lint
 The installed command is `adrlint`. This package replaces the unscoped `adrlint` npm package,
 which is deprecated.
 
-The postinstall step downloads the pre-compiled binary for your platform and verifies it against the
-release checksum manifest. Prebuilt archives exist for Linux (glibc) `x86_64`/`aarch64`, macOS
-`x86_64`/`aarch64`, and Windows `x86_64`.
+The binary comes from a per-platform package, `@polylint/adrlint-<platform>`, that npm selects through
+`optionalDependencies` by `os`, `cpu` and `libc`, so the install needs no network access beyond the
+registry. Platform packages exist for Linux `x64`/`arm64` (glibc and musl), macOS `x64`/`arm64` and
+Windows `x64`/`arm64`.
 
-Anything else — musl/Alpine Linux, 32-bit, other architectures — has no prebuilt archive; install with
-`cargo install adrlint` instead.
+If no platform package is installed (optional dependencies disabled, or an unsupported host), the
+`postinstall` step falls back to downloading the release archive and verifying it against the release
+checksum manifest. A failed fallback download does not fail the install; `adrlint` then explains how
+to get a binary, for example with `cargo install adrlint`.
 
 ## Usage
 

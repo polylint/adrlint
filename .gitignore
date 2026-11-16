@@ -45,6 +45,11 @@ pip-package/adrlint/__pycache__/
 npm-package/bin/adrlint-bin
 npm-package/bin/adrlint.exe
 
+# Staged from the release archives by npm-package/stage-binaries.sh at publish time.
+npm-package/platforms/*/bin/
+npm-package/platforms/*/LICENSE
+npm-package/**/*.tgz
+
 # Tooling caches
 .polylint/
 build/

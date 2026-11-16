@@ -2,9 +2,9 @@
 # Refresh it with `ai-rulez lock`; `ai-rulez generate --locked` fails when it is stale.
 
 version = 1
-ai_rulez_version = '5.13.2'
+ai_rulez_version = '5.13.3'
 scope = 'all'
-tree = 'sha256:f906e178a736f8136705205395551f5f83b742be87013d9866e98ea1dd663426'
+tree = 'sha256:13c1b6df857f79109485c49cc5852ca60c1bbaf654ddaf9c1934a972f8f12002'
 
 [[served]]
 name = 'architecture'
@@ -178,7 +178,7 @@ digest = 'sha256:049b010ce9fba6a9fa3f0b03a00f31573774911ffb0557a4771704d713da1b0
 kind = 'rule'
 id = 'cross-platform-distribution'
 path = 'rules/cross-platform-distribution.md'
-digest = 'sha256:0791e9ec538eb6728afd92f6deb29598a7a308ad7db896376b37dd263ff15391'
+digest = 'sha256:30146494442c961693804fc60a76bac17dff4087e9e515dd4f44c311a4ea0976'
 
 [[item]]
 kind = 'rule'
@@ -202,7 +202,7 @@ digest = 'sha256:2cf8bd133bd4bb302716ea7c256469a0b03a72127ae28d41a7cfb703108197a
 kind = 'rule'
 id = 'version-synchronization'
 path = 'rules/version-synchronization.md'
-digest = 'sha256:8cbc7a7c0f94c55bbab408da6e7d4bfd281951d6c848ea32e83287b4d36f30af'
+digest = 'sha256:1977cde7df84634d299016cd75e18fd86e41c166af92929bb3feadf3ea96d138'
 
 [[item]]
 kind = 'skill'

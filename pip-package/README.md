@@ -12,11 +12,14 @@ records: structure, numbering, Markdown quality, and immutability of accepted de
 pip install adrlint
 ```
 
-The first run downloads the pre-compiled binary for your platform and verifies it against the release
-checksum manifest. Prebuilt archives exist for Linux (glibc) `x86_64`/`aarch64`, macOS
-`x86_64`/`aarch64`, and Windows `x86_64`.
+Each supported platform has its own wheel with the binary inside, so `pip` installs it without
+fetching anything else: Linux `x86_64`/`aarch64` (`manylinux` for glibc, `musllinux` for musl), macOS
+`x86_64`/`arm64` and Windows `x86_64`/`arm64`.
 
-Set `ADRLINT_BINARY` to use an existing executable instead of downloading one.
+On any other host pip falls back to the pure-Python `py3-none-any` wheel, which downloads the
+pre-compiled binary on first run and verifies it against the release checksum manifest.
+
+Set `ADRLINT_BINARY` to use an existing executable instead of the bundled or downloaded one.
 
 ## Usage
 

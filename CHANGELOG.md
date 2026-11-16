@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- npm: the binary now ships in eight per-platform packages, `@polylint/adrlint-<platform>`
+  (`darwin-arm64`, `darwin-x64`, `linux-x64-gnu`, `linux-x64-musl`, `linux-arm64-gnu`,
+  `linux-arm64-musl`, `win32-x64`, `win32-arm64`), which `@polylint/adrlint` pulls in through
+  `optionalDependencies`. Installing needs no network access beyond the registry, so it works in
+  sandboxes and offline mirrors. The `postinstall` download remains as a fallback for hosts without a
+  platform package and no longer fails the install when it cannot reach GitHub.
+- PyPI: one wheel per platform with the binary inside (`manylinux_2_28`, `musllinux_1_2`,
+  `macosx_11_0_arm64`, `macosx_10_12_x86_64`, `win_amd64`, `win_arm64`), so `pip install adrlint` no
+  longer downloads at first run. A `py3-none-any` fallback wheel keeps the first-run download for
+  other hosts and is the only one that depends on certifi. No sdist is published. `python -m adrlint`
+  now works.
+
 ## 0.5.1 - 2026-11-16
 
 ### Changed

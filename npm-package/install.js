@@ -3,10 +3,14 @@ const fs = require("node:fs");
 const https = require("node:https");
 const os = require("node:os");
 const path = require("node:path");
-const tar = require("tar");
-const AdmZip = require("adm-zip");
 
 const { version } = require("./package.json");
+const { resolvePlatformBinary } = require("./index.js");
+
+// Fallback installer. The primary path is the @polylint/adrlint-<platform> optional dependency,
+// which ships the binary inside the package and needs no network. This script only downloads when
+// no platform package resolved (optional dependencies disabled, or a host without one), and a
+// failed download never fails `npm install`: the launcher then explains what is missing.
 
 const BASE_URL = `https://github.com/polylint/adrlint/releases/download/v${version}`;
 
@@ -198,7 +202,9 @@ async function installBinary() {
     fs.writeFileSync(archivePath, archive);
 
     console.log("Extracting...");
+    // Loaded only on the download path, so the common case never touches the archive readers.
     if (isWindows) {
+      const AdmZip = require("adm-zip");
       const zip = new AdmZip(archivePath);
       const entry = zip.getEntries().find((e) => path.basename(e.entryName) === memberName);
       if (!entry) {
@@ -206,6 +212,7 @@ async function installBinary() {
       }
       zip.extractEntryTo(entry, stagingDir, false, true);
     } else {
+      const tar = require("tar");
       await tar.extract({
         file: archivePath,
         cwd: stagingDir,
@@ -236,7 +243,21 @@ async function installBinary() {
   }
 }
 
-installBinary().catch((error) => {
-  console.error(`Failed to install the adrlint binary: ${error.message}`);
-  process.exit(1);
-});
+async function main() {
+  const platformBinary = resolvePlatformBinary();
+  if (platformBinary) {
+    // The platform package already carries the binary; there is nothing to fetch.
+    return;
+  }
+
+  try {
+    await installBinary();
+  } catch (error) {
+    // Exit 0 regardless: an install must not fail because the fallback could not reach GitHub
+    // (sandboxes, air-gapped CI). Running `adrlint` then prints how to get a binary.
+    console.warn(`adrlint: no platform package is installed and the fallback download failed: ${error.message}`);
+    console.warn("adrlint: reinstall with optional dependencies enabled, or run `cargo install adrlint`.");
+  }
+}
+
+main();

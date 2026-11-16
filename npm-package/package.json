@@ -32,7 +32,19 @@
     "adm-zip": "^0.6.1",
     "tar": "^7.5.23"
   },
+  "optionalDependencies": {
+    "@polylint/adrlint-darwin-arm64": "0.5.1",
+    "@polylint/adrlint-darwin-x64": "0.5.1",
+    "@polylint/adrlint-linux-arm64-gnu": "0.5.1",
+    "@polylint/adrlint-linux-arm64-musl": "0.5.1",
+    "@polylint/adrlint-linux-x64-gnu": "0.5.1",
+    "@polylint/adrlint-linux-x64-musl": "0.5.1",
+    "@polylint/adrlint-win32-arm64": "0.5.1",
+    "@polylint/adrlint-win32-x64": "0.5.1"
+  },
+  "main": "index.js",
   "files": [
+    "index.js",
     "install.js",
     "bin/adrlint"
   ],

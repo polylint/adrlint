@@ -1,30 +1,16 @@
 #!/usr/bin/env node
-// Launcher stub. The real executable is fetched per-platform by install.js and
-// lands beside this file as adrlint-bin (or adrlint.exe on Windows). Keeping
-// the npm `bin` entry a script means the published tarball stays platform-neutral
-// and npm can generate its Windows .cmd shim.
+// Launcher. The binary comes from the matching @polylint/adrlint-<platform>
+// optional dependency; when none is installed, from the fallback download that
+// install.js places beside this file. Keeping the npm `bin` entry a script means
+// the published tarball stays platform-neutral and npm can generate its Windows
+// .cmd shim.
 const { spawnSync } = require("node:child_process");
-const fs = require("node:fs");
-const os = require("node:os");
-const path = require("node:path");
+const { missingBinaryMessage, resolveBinaryPath } = require("../index.js");
 
-const isWindows = os.type() === "Windows_NT";
-const executable = path.join(
-  __dirname,
-  isWindows ? "adrlint.exe" : "adrlint-bin",
-);
+const executable = resolveBinaryPath();
 
-if (!fs.existsSync(executable)) {
-  console.error(
-    [
-      "adrlint: the native binary is missing.",
-      "",
-      "It is downloaded by this package's postinstall step. Reinstall to retry:",
-      "  npm i -g @polylint/adrlint",
-      "",
-      "If the install ran with --ignore-scripts, the binary was never fetched.",
-    ].join("\n"),
-  );
+if (executable === null) {
+  console.error(missingBinaryMessage());
   process.exit(1);
 }
 
@@ -35,6 +21,11 @@ const result = spawnSync(executable, process.argv.slice(2), {
 if (result.error) {
   console.error(`adrlint: could not run ${executable}: ${result.error.message}`);
   process.exit(1);
+}
+
+if (result.signal) {
+  // Re-raise so the parent shell sees a signal death rather than a plain exit.
+  process.kill(process.pid, result.signal);
 }
 
 // A child killed by a signal reports status null; surface that as a failure
