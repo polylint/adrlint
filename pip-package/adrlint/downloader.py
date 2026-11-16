@@ -31,7 +31,7 @@ from urllib.request import Request, urlopen
 
 import certifi
 
-BASE_URL = "https://github.com/Goldziher/adrlint/releases/download"
+BASE_URL = "https://github.com/polylint/adrlint/releases/download"
 
 # A release archive is a few megabytes. Refusing anything larger keeps a hostile or broken
 # response from being buffered into memory.

@@ -31,9 +31,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Goldziher/adrlint"
-Repository = "https://github.com/Goldziher/adrlint.git"
-Issues = "https://github.com/Goldziher/adrlint/issues"
+Homepage = "https://github.com/polylint/adrlint"
+Repository = "https://github.com/polylint/adrlint.git"
+Issues = "https://github.com/polylint/adrlint/issues"
 
 [project.scripts]
 adrlint = "adrlint.cli:main"

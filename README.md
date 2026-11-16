@@ -11,9 +11,9 @@ Markdown itself — then keeps accepted decisions immutable by hashing their con
 MADR-native&nbsp;·&nbsp;rumdl-powered&nbsp;·&nbsp;sequential numbering&nbsp;·&nbsp;immutability&nbsp;·&nbsp;single binary&nbsp;·&nbsp;CI-ready
 
 [![crates.io](https://img.shields.io/crates/v/adrlint?style=flat-square&color=f59e0b)](https://crates.io/crates/adrlint)
-[![npm](https://img.shields.io/npm/v/adrlint?style=flat-square&color=f59e0b&label=npm)](https://www.npmjs.com/package/adrlint)
+[![npm](https://img.shields.io/npm/v/@polylint/adrlint?style=flat-square&color=f59e0b&label=npm)](https://www.npmjs.com/package/@polylint/adrlint)
 [![PyPI](https://img.shields.io/pypi/v/adrlint?style=flat-square&color=f59e0b)](https://pypi.org/project/adrlint/)
-[![CI](https://img.shields.io/github/actions/workflow/status/Goldziher/adrlint/ci.yml?style=flat-square&label=CI)](https://github.com/Goldziher/adrlint/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/polylint/adrlint/ci.yml?style=flat-square&label=CI)](https://github.com/polylint/adrlint/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-f59e0b?style=flat-square)](./LICENSE)
 
 [Install](#installation)&nbsp;·&nbsp;[Quick start](#quick-start)&nbsp;·&nbsp;[Integrations](#integrations)&nbsp;·&nbsp;[Rules](#rules)&nbsp;·&nbsp;[Configuration](#configuration)&nbsp;·&nbsp;[Locking](#immutability-and-locking)&nbsp;·&nbsp;[GitHub Action](#github-action)
@@ -69,15 +69,15 @@ path is checked under the `.adrlint.toml` of the project that owns it.
 
 adrlint is one self-contained binary. Every channel installs the same release build.
 
-| Channel                | Command                                                                                         |
-| ---------------------- | ----------------------------------------------------------------------------------------------- |
-| Homebrew (macOS/Linux) | `brew tap goldziher/tap && brew install adrlint`                                                |
-| Scoop (Windows)        | `scoop bucket add goldziher https://github.com/Goldziher/scoop-bucket && scoop install adrlint` |
-| Cargo (Rust)           | `cargo install adrlint`                                                                         |
-| Cargo, prebuilt        | `cargo binstall adrlint`                                                                        |
-| npm (Node.js)          | `pnpm add -g adrlint`                                                                           |
-| pip (Python)           | `pip install adrlint`                                                                           |
-| GitHub Release         | [archive per platform](#prebuilt-archives)                                                      |
+| Channel                | Command                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| Homebrew (macOS/Linux) | `brew install polylint/tap/adrlint`                                                           |
+| Scoop (Windows)        | `scoop bucket add polylint https://github.com/polylint/scoop-bucket && scoop install adrlint` |
+| Cargo (Rust)           | `cargo install adrlint`                                                                       |
+| Cargo, prebuilt        | `cargo binstall adrlint`                                                                      |
+| npm (Node.js)          | `npm i -g @polylint/adrlint`                                                                  |
+| pip (Python)           | `pip install adrlint`                                                                         |
+| GitHub Release         | [archive per platform](#prebuilt-archives)                                                    |
 
 ### Cargo
 
@@ -92,17 +92,20 @@ cargo binstall adrlint         # downloads the release archive instead of compil
 ### npm
 
 ```bash
-npm install -g adrlint         # or: pnpm add -g adrlint, yarn global add adrlint, bun add -g adrlint
+npm install -g @polylint/adrlint   # or: pnpm add -g @polylint/adrlint, bun add -g @polylint/adrlint
 ```
 
 Run without installing:
 
 ```bash
-npx adrlint lint               # or: pnpm dlx adrlint@latest lint, yarn dlx adrlint lint, bunx adrlint lint
+npx @polylint/adrlint lint     # or: pnpm dlx @polylint/adrlint lint, bunx @polylint/adrlint lint
 ```
 
 The package downloads the release archive for your platform on `postinstall`, verifies its SHA-256
 against the release checksums before extracting, and pins its own version. Requires Node.js 22+.
+
+The package is published as `@polylint/adrlint`; the command it installs is still `adrlint`. Releases
+up to 0.5.0 were published under the unscoped name `adrlint`, which is deprecated.
 
 ### Python
 
@@ -139,7 +142,7 @@ Checksums are in `adrlint_<version>_checksums.txt` (`sha256sum` format). Downloa
 ```bash
 VERSION=0.5.0
 TRIPLE=x86_64-unknown-linux-gnu
-BASE=https://github.com/Goldziher/adrlint/releases/download/v${VERSION}
+BASE=https://github.com/polylint/adrlint/releases/download/v${VERSION}
 
 curl -fsSLO "${BASE}/adrlint-${TRIPLE}.tar.gz"
 curl -fsSLO "${BASE}/adrlint_${VERSION}_checksums.txt"
@@ -157,7 +160,7 @@ and arm64; the musl archives are static and need no glibc.
 <summary><b>Build from source</b></summary>
 
 ```bash
-git clone https://github.com/Goldziher/adrlint.git
+git clone https://github.com/polylint/adrlint.git
 cd adrlint
 cargo install --path .
 ```
@@ -214,7 +217,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: Goldziher/adrlint@v0
+      - uses: polylint/adrlint@v0
         with:
           args: "lint --format github"
 ```
@@ -227,14 +230,14 @@ turns the text output into annotations.
 Gate formatting and the lock manifest in the same job, or install only and run adrlint yourself:
 
 ```yaml
-- uses: Goldziher/adrlint@v0
+- uses: polylint/adrlint@v0
   with:
     args: "format --check"
-- uses: Goldziher/adrlint@v0
+- uses: polylint/adrlint@v0
   with:
     args: "lock --check"
 
-- uses: Goldziher/adrlint@v0
+- uses: polylint/adrlint@v0
   id: adrlint
   with:
     install-only: "true"
@@ -250,7 +253,7 @@ Gate formatting and the lock manifest in the same job, or install only and run a
 | `working-directory` | `.`                                          | Directory to run adrlint in                                            |
 | `install-only`      | `false`                                      | Install adrlint and put it on `PATH`, but do not run it                |
 | `token`             | `${{ github.token }}`                        | Token used to query the GitHub API and download release assets         |
-| `repository`        | `Goldziher/adrlint`                          | Advanced: override the `owner/repo` release assets are downloaded from |
+| `repository`        | `polylint/adrlint`                           | Advanced: override the `owner/repo` release assets are downloaded from |
 
 `@v0` resolves to the newest 0.x release; a full tag resolves to that release. **Outputs:** `version`
 (the version installed, without the leading `v`) and `path` (absolute path to the binary).
@@ -262,7 +265,7 @@ expanded by the shell first; adrlint expands them itself.
 
 ```yaml
 repos:
-  - repo: https://github.com/Goldziher/adrlint
+  - repo: https://github.com/polylint/adrlint
     rev: v0.5.0
     hooks:
       - id: adrlint-lint
@@ -288,13 +291,13 @@ reported; a staged Markdown file that is not an ADR and sits outside any log, su
 
 ### poly
 
-adrlint ships a [poly](https://github.com/Goldziher/poly) hook catalog, `poly-hooks.toml`. Declare it
+adrlint ships a [poly](https://github.com/polylint/polylint) hook catalog, `poly-hooks.toml`. Declare it
 as a source in your `poly.toml`:
 
 ```toml
 [[hooks.sources]]
 id = "adrlint"
-git = "https://github.com/Goldziher/adrlint.git"
+git = "https://github.com/polylint/adrlint.git"
 revision = "v0.5.0"
 hooks = ["adrlint-lint", "adrlint-format-check", "adrlint-lock-check"]
 ```
@@ -778,6 +781,16 @@ let findings = rules::check_document(&document, path, root);
 ```
 
 The CLI is a thin layer over those modules; nothing in the library shells out.
+
+## polylint organization
+
+adrlint is part of [polylint](https://github.com/polylint), high-performance Rust linters and
+formatters built for agentic workflows. Sibling tools: [polylint](https://github.com/polylint/polylint)
+(one linter and formatter for every language; it can run adrlint as an engine via `poly adr`),
+[skif](https://github.com/polylint/skif) (JS/TS dependency linter), and
+[uncomment](https://github.com/polylint/uncomment) (comment removal and linting). Install any of them
+from the Homebrew tap (`brew tap polylint/tap`) or the Scoop bucket
+(`scoop bucket add polylint https://github.com/polylint/scoop-bucket`).
 
 ## Contributing
 

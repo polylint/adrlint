@@ -1,6 +1,6 @@
 # Poly hooks
 
-adrlint publishes a [poly](https://github.com/Goldziher/poly) hook catalog in `poly-hooks.toml`. A
+adrlint publishes a [poly](https://github.com/polylint/polylint) hook catalog in `poly-hooks.toml`. A
 consumer repository declares adrlint as a hook source in its own `poly.toml` and selects the hooks it
 wants; it never creates a `poly-hooks.toml` of its own.
 
@@ -18,7 +18,7 @@ Add a Git source to `poly.toml`:
 ```toml
 [[hooks.sources]]
 id = "adrlint"
-git = "https://github.com/Goldziher/adrlint.git"
+git = "https://github.com/polylint/adrlint.git"
 revision = "v0.5.0"
 hooks = ["adrlint-lint", "adrlint-format-check", "adrlint-lock-check"]
 ```
@@ -36,12 +36,12 @@ channels = ["system"]
 Then resolve the revision, commit the lock and install the Git shims:
 
 ```bash
-poly hooks update
-git add poly.toml poly-hooks.lock
+poly lock
+git add poly.toml poly.lock
 poly hooks install
 ```
 
-Hook runs use the locked commit. Run `poly hooks update` again after changing `revision`.
+Hook runs use the locked commit. Run `poly lock` again after changing `revision`.
 
 ## Available hooks
 

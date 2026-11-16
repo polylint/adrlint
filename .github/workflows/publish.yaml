@@ -127,7 +127,7 @@ jobs:
           fi
 
           npm_exists=false
-          if npm view "adrlint@${version}" version >/dev/null 2>&1; then
+          if npm view "@polylint/adrlint@${version}" version >/dev/null 2>&1; then
             npm_exists=true
           fi
 
@@ -780,6 +780,10 @@ jobs:
           packages-dir: pip-package/dist
           skip-existing: true
 
+  # Homebrew and Scoop follow the org pattern: a template under scripts/publish/ is rendered by the
+  # shared xberg-io/actions renderers, and the org GitHub App (BOT_APP_ID / BOT_APP_PRIVATE_KEY)
+  # mints a token scoped to the one tap or bucket repository it pushes to. These jobs check out the
+  # workflow revision, not the tag: they only need the templates, and older tags may predate them.
   publish_homebrew:
     name: Update Homebrew formula
     needs: [meta, verify, finalize_release]
@@ -788,48 +792,177 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Mint a tap token
+        uses: actions/create-github-app-token@v3
+        id: tap-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: polylint
+          repositories: homebrew-tap
+
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || '' }}
 
-      - name: Generate formula and push to tap
+      - name: Checkout the tap
+        uses: actions/checkout@v7
+        with:
+          repository: polylint/homebrew-tap
+          token: ${{ steps.tap-token.outputs.token }}
+          path: homebrew-tap
+          persist-credentials: true
+
+      - name: Render the formula
+        uses: xberg-io/actions/publish-homebrew-source-formulas@v1
+        with:
+          tap-dir: ${{ github.workspace }}/homebrew-tap
+          config-file: scripts/publish/homebrew.json
+          tag: ${{ needs.meta.outputs.tag }}
+          version: ${{ needs.meta.outputs.version }}
+          github-repo: ${{ github.repository }}
+
+      - name: Commit and push to the tap
+        working-directory: homebrew-tap
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
-          TAG: ${{ needs.meta.outputs.tag }}
           VERSION: ${{ needs.meta.outputs.version }}
         run: |
           set -euo pipefail
-          if [ -z "${HOMEBREW_TOKEN:-}" ]; then
-            echo "HOMEBREW_TOKEN not set; skipping the Homebrew formula update."
-            exit 0
-          fi
-          tag="$TAG"
-          version="$VERSION"
-          gh release download "$tag" -p "adrlint_${version}_checksums.txt" -O checksums.txt
-          ./scripts/update-homebrew-formula.sh "$version" checksums.txt > adrlint.rb
-
-          # The credential is passed to git through the environment (GIT_CONFIG_*), so it never
-          # appears in argv or in the clone's .git/config.
-          basic="$(printf 'x-access-token:%s' "$HOMEBREW_TOKEN" | base64 | tr -d '\n')"
-          export GIT_CONFIG_COUNT=1
-          export GIT_CONFIG_KEY_0=http.extraheader
-          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${basic}"
-
-          git clone --depth 1 https://github.com/Goldziher/homebrew-tap.git tap
-          cp adrlint.rb tap/Formula/adrlint.rb
-          cd tap
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "polylint-release-helper[bot]"
+          git config user.email "357288453+polylint-release-helper[bot]@users.noreply.github.com"
           git add Formula/adrlint.rb
           if git diff --cached --quiet; then
             echo "Formula already up to date."
-          else
-            git commit -m "adrlint ${version}"
-            git push
+            exit 0
           fi
+          git commit -m "adrlint ${VERSION}"
+          # Every polylint release pipeline pushes to this one tap, so a concurrent release can land
+          # between our checkout and our push. Each repo touches only its own formula, so rebasing
+          # onto the new tip and retrying is safe. ~keep
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); rebasing onto the current tap tip"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::tap rebase hit a real conflict; refusing to force the push"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "::error::could not push to the tap after 5 attempts"
+          exit 1
+
+  homebrew_bottles:
+    name: Build Homebrew bottle (${{ matrix.bottle_tag }})
+    needs: [meta, verify, publish_homebrew]
+    if: needs.verify.result == 'success' && needs.publish_homebrew.result == 'success'
+    runs-on: ${{ matrix.os }}
+    permissions:
+      # The bottle tarball is uploaded to this repository's release.
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-26, bottle_tag: arm64_tahoe, install_brew: false }
+          - { os: ubuntu-latest, bottle_tag: x86_64_linux, install_brew: true }
+          - { os: ubuntu-24.04-arm, bottle_tag: arm64_linux, install_brew: true }
+    steps:
+      - name: Install Homebrew (Linux)
+        if: ${{ matrix.install_brew }}
+        uses: xberg-io/actions/install-homebrew-linux@v1
+
+      - name: Build the bottle
+        uses: xberg-io/actions/homebrew-build-bottles@v1
+        with:
+          tag: ${{ needs.meta.outputs.tag }}
+          version: ${{ needs.meta.outputs.version }}
+          tap: polylint/tap
+          formulas: adrlint
+          out-dir: ${{ github.workspace }}/bottle-json
+          github-repo: ${{ github.repository }}
+
+      - name: Upload the bottle manifest
+        uses: actions/upload-artifact@v7
+        with:
+          name: homebrew-bottle-json-${{ matrix.bottle_tag }}
+          path: ${{ github.workspace }}/bottle-json/*.json
+          if-no-files-found: error
+          retention-days: 14
+
+  publish_homebrew_bottles:
+    name: Merge Homebrew bottle DSL
+    needs: [meta, verify, publish_homebrew, homebrew_bottles]
+    if: needs.verify.result == 'success' && needs.publish_homebrew.result == 'success' && needs.homebrew_bottles.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Mint a tap token
+        uses: actions/create-github-app-token@v3
+        id: tap-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: polylint
+          repositories: homebrew-tap
+
+      - name: Checkout the tap
+        uses: actions/checkout@v7
+        with:
+          repository: polylint/homebrew-tap
+          token: ${{ steps.tap-token.outputs.token }}
+          path: homebrew-tap
+          persist-credentials: true
+
+      - name: Download the bottle manifests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ github.workspace }}/bottle-json
+          pattern: homebrew-bottle-json-*
+          merge-multiple: true
+
+      - name: Merge the bottle DSL
+        uses: xberg-io/actions/homebrew-merge-bottles@v1
+        with:
+          tag: ${{ needs.meta.outputs.tag }}
+          version: ${{ needs.meta.outputs.version }}
+          tap-dir: ${{ github.workspace }}/homebrew-tap
+          json-dir: ${{ github.workspace }}/bottle-json
+          formulas: adrlint
+          github-repo: ${{ github.repository }}
+
+      - name: Commit and push the bottle DSL
+        working-directory: homebrew-tap
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "polylint-release-helper[bot]"
+          git config user.email "357288453+polylint-release-helper[bot]@users.noreply.github.com"
+          git add Formula/adrlint.rb
+          if git diff --cached --quiet; then
+            echo "No bottle DSL changes; skipping commit."
+            exit 0
+          fi
+          git commit -m "adrlint ${VERSION}: add bottle DSL"
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); rebasing onto the current tap tip"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::tap rebase hit a real conflict; refusing to force the push"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "::error::could not push to the tap after 5 attempts"
+          exit 1
 
   publish_scoop:
     name: Update Scoop manifest
@@ -839,48 +972,62 @@ jobs:
     permissions:
       contents: read
     steps:
-      # Deliberately checked out at the workflow revision, not the tag: this job only needs the
-      # generator script and the published assets, and older tags may predate the script.
+      - name: Mint a bucket token
+        uses: actions/create-github-app-token@v3
+        id: bucket-token
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+          owner: polylint
+          repositories: scoop-bucket
+
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
-      - name: Generate manifest and push to the Scoop bucket
+      - name: Checkout the bucket
+        uses: actions/checkout@v7
+        with:
+          repository: polylint/scoop-bucket
+          token: ${{ steps.bucket-token.outputs.token }}
+          path: scoop-bucket
+          persist-credentials: true
+
+      - name: Render the manifest
+        uses: xberg-io/actions/publish-scoop-manifests@v1
+        with:
+          bucket-dir: ${{ github.workspace }}/scoop-bucket
+          config-file: scripts/publish/scoop.json
+          tag: ${{ needs.meta.outputs.tag }}
+          version: ${{ needs.meta.outputs.version }}
+          github-repo: ${{ github.repository }}
+
+      - name: Commit and push to the bucket
+        working-directory: scoop-bucket
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # A PAT with push access to Goldziher/scoop-bucket. The same token already maintains the
-          # Homebrew tap, so one secret covers both taps.
-          HOMEBREW_TOKEN: ${{ secrets.HOMEBREW_TOKEN }}
-          TAG: ${{ needs.meta.outputs.tag }}
           VERSION: ${{ needs.meta.outputs.version }}
         run: |
           set -euo pipefail
-          if [ -z "${HOMEBREW_TOKEN:-}" ]; then
-            echo "HOMEBREW_TOKEN not set; skipping the Scoop manifest update."
-            exit 0
-          fi
-          tag="$TAG"
-          version="$VERSION"
-          gh release download "$tag" -p "adrlint_${version}_checksums.txt" -O checksums.txt
-          ./scripts/update-scoop-manifest.sh "$version" checksums.txt > adrlint.json
-
-          # The credential is passed to git through the environment (GIT_CONFIG_*), so it never
-          # appears in argv or in the clone's .git/config.
-          basic="$(printf 'x-access-token:%s' "$HOMEBREW_TOKEN" | base64 | tr -d '\n')"
-          export GIT_CONFIG_COUNT=1
-          export GIT_CONFIG_KEY_0=http.extraheader
-          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${basic}"
-
-          git clone --depth 1 https://github.com/Goldziher/scoop-bucket.git bucket-repo
-          cp adrlint.json bucket-repo/bucket/adrlint.json
-          cd bucket-repo
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "polylint-release-helper[bot]"
+          git config user.email "357288453+polylint-release-helper[bot]@users.noreply.github.com"
           git add bucket/adrlint.json
           if git diff --cached --quiet; then
             echo "Scoop manifest already up to date."
-          else
-            git commit -m "adrlint ${version}"
-            git push
+            exit 0
           fi
+          git commit -m "adrlint ${VERSION}"
+          # Every polylint release pipeline pushes to this one bucket; rebase and retry on a race. ~keep
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD; then
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); rebasing onto the current bucket tip"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "::error::bucket rebase hit a real conflict; refusing to force the push"
+              exit 1
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "::error::could not push to the bucket after 5 attempts"
+          exit 1

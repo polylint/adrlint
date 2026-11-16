@@ -13,7 +13,7 @@
 ### Bootstrap
 
 ```bash
-git clone https://github.com/Goldziher/adrlint.git
+git clone https://github.com/polylint/adrlint.git
 cd adrlint
 cargo check
 cargo test
