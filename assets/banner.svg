@@ -19,7 +19,7 @@
   <rect width="1200" height="340" rx="20" fill="url(#glowAmber)"/>
   <rect width="1200" height="340" rx="20" fill="url(#glowBlue)"/>
 
-  <g transform="translate(372,76) scale(1.6)">
+  <g transform="translate(404,80) scale(1.05)">
     <rect x="0" y="0" width="56" height="68" rx="8" fill="none" stroke="#f59e0b" stroke-width="3"/>
     <line x1="13" y1="18" x2="43" y2="18" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
     <line x1="13" y1="30" x2="36" y2="30" stroke="#6b7280" stroke-width="3" stroke-linecap="round"/>
