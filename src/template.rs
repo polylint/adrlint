@@ -1,5 +1,5 @@
 pub fn today() -> String {
-    jiff::Zoned::now().date().to_string()
+    jiff::ZonedDateTime::now().date().to_string()
 }
 
 pub fn slugify(title: &str) -> String {

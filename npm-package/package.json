@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
-    "tar": "^7.5.22"
+    "tar": "^7.5.23"
   },
   "files": [
     "install.js",
@@ -39,7 +39,7 @@
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@12.16.1",
+  "packageManager": "pnpm@12.21.0",
   "publishConfig": {
     "access": "public",
     "provenance": true
