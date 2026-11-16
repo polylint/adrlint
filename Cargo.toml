@@ -60,3 +60,10 @@ pretty_assertions = "1.4.1"
 regex = "1.13.1"
 serde_json = "1.0.154"
 tempfile = "3.27.0"
+
+# Release builds favour runtime speed (default opt-level 3, fat LTO, one codegen unit) and drop symbol
+# tables, which only debuggers need, to keep the shipped binaries and packages small. ~keep
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
