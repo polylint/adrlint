@@ -174,29 +174,45 @@ importers:
         version: 7.5.23
     optionalDependencies:
       '@polylint/adrlint-darwin-arm64':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-darwin-x64':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-linux-arm64-gnu':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-linux-arm64-musl':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-linux-x64-gnu':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-linux-x64-musl':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-win32-arm64':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
       '@polylint/adrlint-win32-x64':
-        specifier: 0.5.1
-        version: 0.5.1
+        specifier: 0.5.2
+        version: 0.5.2
+
+  platforms/darwin-arm64: {}
+
+  platforms/darwin-x64: {}
+
+  platforms/linux-arm64-gnu: {}
+
+  platforms/linux-arm64-musl: {}
+
+  platforms/linux-x64-gnu: {}
+
+  platforms/linux-x64-musl: {}
+
+  platforms/win32-arm64: {}
+
+  platforms/win32-x64: {}
 
 packages:
 
@@ -204,47 +220,47 @@ packages:
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
     engines: {node: '>=18.0.0'}
 
-  '@polylint/adrlint-darwin-arm64@0.5.1':
-    resolution: {integrity: sha512-sOqyUsfj28+6VwHgzlK8u555cdkiyoEEl83+1yWO31N4kJN64BIIK4kLokNHbDyTzibyVwk6Kq+60FUztXWWcw==}
+  '@polylint/adrlint-darwin-arm64@0.5.2':
+    resolution: {integrity: sha512-1TVnIBq625FGday4lCigYIGcU8kYeUFaLGae5HAQsnAEjl3oTG6sM5NlNZsXcgyI0+1DmuQyct6udOw6ZPKK+g==}
     cpu: [arm64]
     os: [darwin]
 
-  '@polylint/adrlint-darwin-x64@0.5.1':
-    resolution: {integrity: sha512-ZfU+p8Z5nevi1pIAOJyA/zItB6JEiLzlz3P/qEbaX0lLSigO4itWNFlP6A7N/j+pc+6xPAeBqoWwKY+r62NjQg==}
+  '@polylint/adrlint-darwin-x64@0.5.2':
+    resolution: {integrity: sha512-gl6VZChTHa5kAqDzBJnkwPvdugl1TkMfoJazJeDsjpM1dsK5zLxmiR3U8lftvuu1euxvTWuFmSWFVsI41mpZug==}
     cpu: [x64]
     os: [darwin]
 
-  '@polylint/adrlint-linux-arm64-gnu@0.5.1':
-    resolution: {integrity: sha512-9zDtlBgv5kQ8eTfI1H/4EO9MtngtLoP4mFnEbPxyyM8Qf41GPIHEUGMzFZpi6BGwAL1RATlgBNEzC2tHjQ6mig==}
+  '@polylint/adrlint-linux-arm64-gnu@0.5.2':
+    resolution: {integrity: sha512-G0DC7fMvlMaiHoOfBWaRE4ZK9J5djxhP1Hyy7fPNE6roxvBz4RvI9U3k+D+3eFSE64NXtvcVpU8TMQruES/4ng==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@polylint/adrlint-linux-arm64-musl@0.5.1':
-    resolution: {integrity: sha512-Omj28sJDobgET4gHljVJUX5FzWZMkmBOCe13VSru444XQZRl6D2AI+yt8clt6WKkxeBmSoiE52KhApcfkffoYA==}
+  '@polylint/adrlint-linux-arm64-musl@0.5.2':
+    resolution: {integrity: sha512-sm0nmCob8hhW5/y5UPWzcQJ1gVwekrG+d26gFC1wCK81k0046bMUR+2FaZRD4ZESrVI/alo8a+rEWk37U60UKQ==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@polylint/adrlint-linux-x64-gnu@0.5.1':
-    resolution: {integrity: sha512-brYdUphi3sAfVDLU1om/CufGuOmCIrgGbP624ukuxcyoviNMst4UiP0fuk1F4bJbTY/si9Da46z3nKBm7/qDbw==}
+  '@polylint/adrlint-linux-x64-gnu@0.5.2':
+    resolution: {integrity: sha512-5glW4aQSklDQ3B8OcbGzFKy6fwwAMCbiaWYNPLBqF4jFrOq4/T0sgHrqOn3ruQFqAousxSNNZUklsETZBiyS7w==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@polylint/adrlint-linux-x64-musl@0.5.1':
-    resolution: {integrity: sha512-f/SRyDBvub9ejw5tlN8sNZpTEfyca3jNUVhhSQt/lz5lNG3J3EL0CuFycGYTSXynLA7tdYqL2cBoI07OFhOfgQ==}
+  '@polylint/adrlint-linux-x64-musl@0.5.2':
+    resolution: {integrity: sha512-+t5SB5gR8HegFc3nI5DTHcYO9v4MbbmUjEdS6m2IckjqDeUhkorfIt3LbESI4yiWsXq+tbiKlYJnt/4ztSHCZQ==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@polylint/adrlint-win32-arm64@0.5.1':
-    resolution: {integrity: sha512-JSBA8Qbsl7ZzAEbW6atQFusxDxavqG871AxNzFaDgFl8gKao1AWEyND3UE6IKPeJirap2T3orB/LWcjbGLjJHA==}
+  '@polylint/adrlint-win32-arm64@0.5.2':
+    resolution: {integrity: sha512-ORvadVLIW0ZmWDYwqzU7Pb7T34bxZ9+gcMd9RT7G+jxuBRgCIeOK6wSloS0HlRHGNT8gABa70DDpJLeYFHRxzg==}
     cpu: [arm64]
     os: [win32]
 
-  '@polylint/adrlint-win32-x64@0.5.1':
-    resolution: {integrity: sha512-iyuDJuqFeLU8D8C3NyDHxawat+kK/kh4VsaUhfxbbAi9Px5rO4l8zqHlqO3SA0+IH5WQ8LQQLOGMYsscd8eFHQ==}
+  '@polylint/adrlint-win32-x64@0.5.2':
+    resolution: {integrity: sha512-/BeijW7WdUCS5Vs8/Qw98cgjGy0UDeMI1PoVHiHVPSTqHW+zFRy2TCR+wN8SNhHJlnuEACOvSIevl0e8RGqqFg==}
     cpu: [x64]
     os: [win32]
 
@@ -278,28 +294,28 @@ snapshots:
     dependencies:
       minipass: 7.1.3
 
-  '@polylint/adrlint-darwin-arm64@0.5.1':
+  '@polylint/adrlint-darwin-arm64@0.5.2':
     optional: true
 
-  '@polylint/adrlint-darwin-x64@0.5.1':
+  '@polylint/adrlint-darwin-x64@0.5.2':
     optional: true
 
-  '@polylint/adrlint-linux-arm64-gnu@0.5.1':
+  '@polylint/adrlint-linux-arm64-gnu@0.5.2':
     optional: true
 
-  '@polylint/adrlint-linux-arm64-musl@0.5.1':
+  '@polylint/adrlint-linux-arm64-musl@0.5.2':
     optional: true
 
-  '@polylint/adrlint-linux-x64-gnu@0.5.1':
+  '@polylint/adrlint-linux-x64-gnu@0.5.2':
     optional: true
 
-  '@polylint/adrlint-linux-x64-musl@0.5.1':
+  '@polylint/adrlint-linux-x64-musl@0.5.2':
     optional: true
 
-  '@polylint/adrlint-win32-arm64@0.5.1':
+  '@polylint/adrlint-win32-arm64@0.5.2':
     optional: true
 
-  '@polylint/adrlint-win32-x64@0.5.1':
+  '@polylint/adrlint-win32-x64@0.5.2':
     optional: true
 
   adm-zip@0.6.1: {}
